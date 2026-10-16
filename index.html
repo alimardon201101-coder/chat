@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="uz">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 </head>
+
 <body class="bg-slate-900 text-slate-100 h-screen flex flex-col">
 
   <!-- Autentifikatsiya Modal oynasi -->
@@ -14,10 +16,14 @@
     <div class="bg-slate-800 p-8 rounded-2xl w-96 shadow-2xl border border-slate-700">
       <h2 id="authTitle" class="text-2xl font-bold mb-6 text-center text-indigo-400">Tizimga Kirish</h2>
       <div id="authError" class="text-red-400 text-sm mb-4 hidden text-center"></div>
-      <input type="text" id="usernameInput" placeholder="Foydalanuvchi nomi" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl mb-4 focus:outline-none focus:border-indigo-500">
-      <input type="password" id="passwordInput" placeholder="Parol" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl mb-4 focus:outline-none focus:border-indigo-500">
-      <button onclick="handleAuth()" id="authBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 transition py-3 rounded-xl font-bold">Kirish</button>
-      <p class="mt-4 text-center text-sm text-slate-400 cursor-pointer" onclick="toggleAuthMode()">Akkauntingiz yo'qmi? Ro'yxatdan o'ting</p>
+      <input type="text" id="usernameInput" placeholder="Foydalanuvchi nomi"
+        class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl mb-4 focus:outline-none focus:border-indigo-500">
+      <input type="password" id="passwordInput" placeholder="Parol"
+        class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl mb-4 focus:outline-none focus:border-indigo-500">
+      <button onclick="handleAuth()" id="authBtn"
+        class="w-full bg-indigo-600 hover:bg-indigo-500 transition py-3 rounded-xl font-bold">Kirish</button>
+      <p class="mt-4 text-center text-sm text-slate-400 cursor-pointer" onclick="toggleAuthMode()">Akkauntingiz yo'qmi?
+        Ro'yxatdan o'ting</p>
     </div>
   </div>
 
@@ -30,11 +36,14 @@
         <button onclick="logout()" class="text-xs text-red-400 hover:underline">Chiqish</button>
       </div>
       <div class="p-3 border-b border-slate-700">
-        <input type="text" placeholder="Qidirish..." class="w-full bg-slate-900 px-3 py-2 rounded-lg text-sm border border-slate-700 focus:outline-none">
+        <input type="text" placeholder="Qidirish..."
+          class="w-full bg-slate-900 px-3 py-2 rounded-lg text-sm border border-slate-700 focus:outline-none">
       </div>
       <div id="chatList" class="flex-1 overflow-y-auto divide-y divide-slate-700/50">
         <!-- Umumiy Guruh -->
-        <div onclick="selectChat('general', 'Umumiy O\'quv Guruhi')" class="p-4 hover:bg-slate-700/50 cursor-pointer transition flex items-center space-x-3 bg-slate-700/30" id="chat-general">
+        <div onclick="selectChat('general', 'Umumiy O\'quv Guruhi')"
+          class="p-4 hover:bg-slate-700/50 cursor-pointer transition flex items-center space-x-3 bg-slate-700/30"
+          id="chat-general">
           <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold">G</div>
           <div>
             <h4 class="font-semibold text-sm">Umumiy O'quv Guruhi</h4>
@@ -48,8 +57,9 @@
     <!-- O'ng Panel: Faol Chat Oynasi -->
     <div class="w-3/4 flex flex-col bg-slate-900">
       <!-- Chat Sarlavhasi -->
-      <div id="chatHeader" class="p-4 bg-slate-800 border-b border-slate-700 font-bold text-lg">Umumiy O'quv Guruhi</div>
-      
+      <div id="chatHeader" class="p-4 bg-slate-800 border-b border-slate-700 font-bold text-lg">Umumiy O'quv Guruhi
+      </div>
+
       <!-- Xabarlar tarixi -->
       <div id="messageContainer" class="flex-1 p-6 overflow-y-auto space-y-4 flex flex-col">
         <!-- Xabarlar shu yerga chiqadi -->
@@ -61,19 +71,19 @@
           📎
           <input type="file" id="fileInput" class="hidden" onchange="sendFile(this)">
         </label>
-        <input type="text" id="messageInput" placeholder="Xabar yozing..." class="flex-1 bg-slate-900 border border-slate-700 px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500" onkeypress="if(event.key === 'Enter') sendMessage()">
-        <button onclick="sendMessage()" class="bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-xl font-bold transition">Yuborish</button>
+        <input type="text" id="messageInput" placeholder="Xabar yozing..."
+          class="flex-1 bg-slate-900 border border-slate-700 px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500"
+          onkeypress="if(event.key === 'Enter') sendMessage()">
+        <button onclick="sendMessage()"
+          class="bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-xl font-bold transition">Yuborish</button>
       </div>
     </div>
   </div>
 
   <script>
-    // Render backend manzili
     const BACKEND_URL = 'https://chat-gcrf.onrender.com';
-    
-    // Socket.io ni Render serveriga ulaymiz
     const socket = io(BACKEND_URL);
-    
+
     let currentRoom = 'general';
     let currentUser = localStorage.getItem('username');
     let isRegisterMode = false;
@@ -92,21 +102,29 @@
       isRegisterMode = !isRegisterMode;
       document.getElementById('authTitle').innerText = isRegisterMode ? "Ro'yxatdan o'tish" : "Tizimga Kirish";
       document.getElementById('authBtn').innerText = isRegisterMode ? "Ro'yxatdan o'tish" : "Kirish";
+      document.getElementById('authError').classList.add('hidden');
     }
 
     async function handleAuth() {
-      const username = document.getElementById('usernameInput').value;
-      const password = document.getElementById('passwordInput').value;
+      const username = document.getElementById('usernameInput').value.trim();
+      const password = document.getElementById('passwordInput').value.trim();
+
+      if (!username || !password) {
+        showError("Maydonlarni to'ldiring!");
+        return;
+      }
+
       const endpoint = isRegisterMode ? `${BACKEND_URL}/api/register` : `${BACKEND_URL}/api/login`;
+      const requestBody = { username, password, secretKey: "" };
 
       try {
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
+          body: JSON.stringify(requestBody)
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
+        if (!res.ok) throw new Error(data.error || "Xatolik yuz berdi!");
 
         if (isRegisterMode) {
           alert("Muvaffaqiyatli ro'yxatdan o'tdingiz, endi kiring!");
@@ -117,10 +135,14 @@
           location.reload();
         }
       } catch (err) {
-        const errDiv = document.getElementById('authError');
-        errDiv.innerText = err.message;
-        errDiv.classList.remove('hidden');
+        showError(err.message);
       }
+    }
+
+    function showError(msg) {
+      const errDiv = document.getElementById('authError');
+      errDiv.innerText = msg;
+      errDiv.classList.remove('hidden');
     }
 
     function logout() {
@@ -129,23 +151,27 @@
     }
 
     async function loadUsers() {
-      const res = await fetch(`${BACKEND_URL}/api/users`);
-      const users = await res.json();
-      const list = document.getElementById('chatList');
-      
-      users.forEach(user => {
-        if (user.username !== currentUser) {
-          list.innerHTML += `
-            <div onclick="selectChat('${user.username}', '${user.username}')" class="p-4 hover:bg-slate-700/50 cursor-pointer transition flex items-center space-x-3" id="chat-${user.username}">
-              <div class="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center font-bold">${user.username[0].toUpperCase()}</div>
-              <div>
-                <h4 class="font-semibold text-sm">${user.username}</h4>
-                <p class="text-xs text-slate-400">${user.role === 'admin' ? 'Ustoz / Admin' : 'O\'quvchi'}</p>
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/users`);
+        const users = await res.json();
+        const list = document.getElementById('chatList');
+
+        users.forEach(user => {
+          if (user.username !== currentUser) {
+            list.innerHTML += `
+              <div onclick="selectChat('${user.username}', '${user.username}')" class="p-4 hover:bg-slate-700/50 cursor-pointer transition flex items-center space-x-3" id="chat-${user.username}">
+                <div class="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center font-bold">${user.username[0].toUpperCase()}</div>
+                <div>
+                  <h4 class="font-semibold text-sm">${user.username}</h4>
+                  <p class="text-xs text-slate-400">${user.role === 'admin' ? 'Ustoz / Admin' : 'O\'quvchi'}</p>
+                </div>
               </div>
-            </div>
-          `;
-        }
-      });
+            `;
+          }
+        });
+      } catch (e) {
+        console.error("Foydalanuvchilarni yuklashda xatolik:", e);
+      }
     }
 
     function selectChat(room, title) {
@@ -156,11 +182,15 @@
     }
 
     async function loadMessages(room) {
-      const res = await fetch(`${BACKEND_URL}/api/messages/${room}?user=${currentUser}`);
-      const messages = await res.json();
-      const container = document.getElementById('messageContainer');
-      container.innerHTML = '';
-      messages.forEach(msg => appendMessage(msg));
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/messages/${room}?user=${currentUser}`);
+        const messages = await res.json();
+        const container = document.getElementById('messageContainer');
+        container.innerHTML = '';
+        messages.forEach(msg => appendMessage(msg));
+      } catch (e) {
+        console.error("Xabarlarni yuklashda xatolik:", e);
+      }
     }
 
     function sendMessage() {
@@ -179,11 +209,15 @@
       const formData = new FormData();
       formData.append('file', file);
 
-      const res = await fetch(`${BACKEND_URL}/api/upload`, { method: 'POST', body: formData });
-      const data = await res.json();
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/upload`, { method: 'POST', body: formData });
+        const data = await res.json();
 
-      const msgData = { sender: currentUser, recipient: currentRoom, text: `[Fayl: ${file.name}]`, fileUrl: data.fileUrl };
-      socket.emit('send_message', msgData);
+        const msgData = { sender: currentUser, recipient: currentRoom, text: `[Fayl: ${file.name}]`, fileUrl: data.fileUrl };
+        socket.emit('send_message', msgData);
+      } catch (e) {
+        alert("Fayl yuklashda xatolik yuz berdi!");
+      }
     }
 
     socket.on('receive_message', (msg) => {
@@ -195,10 +229,9 @@
     function appendMessage(msg) {
       const container = document.getElementById('messageContainer');
       const isMe = msg.sender === currentUser;
-      
+
       let fileHtml = '';
       if (msg.fileUrl) {
-        // Agar yuklangan fayl manzili nisbiy bo'lsa, to'liq Render havolasini qo'shamiz
         let fullFileUrl = msg.fileUrl.startsWith('http') ? msg.fileUrl : `${BACKEND_URL}${msg.fileUrl}`;
         fileHtml = `<a href="${fullFileUrl}" target="_blank" class="text-indigo-300 underline block mt-1">📎 Yuklab olish / Ko'rish</a>`;
       }
@@ -216,4 +249,5 @@
     }
   </script>
 </body>
+
 </html>
