@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O'quv Markazi - Ichki Chat</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 h-screen flex flex-col">
+
+  <!-- Autentifikatsiya Modal oynasi -->
+  <div id="authModal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+    <div class="bg-slate-800 p-8 rounded-2xl w-96 shadow-2xl border border-slate-700">
+      <h2 id="authTitle" class="text-2xl font-bold mb-6 text-center text-indigo-400">Tizimga Kirish</h2>
+      <div id="authError" class="text-red-400 text-sm mb-4 hidden text-center"></div>
+      <input type="text" id="usernameInput" placeholder="Foydalanuvchi nomi" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl mb-4 focus:outline-none focus:border-indigo-500">
+      <input type="password" id="passwordInput" placeholder="Parol" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl mb-4 focus:outline-none focus:border-indigo-500">
+      <button onclick="handleAuth()" id="authBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 transition py-3 rounded-xl font-bold">Kirish</button>
+      <p class="mt-4 text-center text-sm text-slate-400 cursor-pointer" onclick="toggleAuthMode()">Akkauntingiz yo'qmi? Ro'yxatdan o'ting</p>
+    </div>
+  </div>
+
+  <!-- Asosiy Telegram Interfeysi (2 Ustunli) -->
+  <div class="flex h-full overflow-hidden">
+    <!-- Chap Panel: Chatlar va Guruhlar Ro'yxati -->
+    <div class="w-1/4 bg-slate-800 border-r border-slate-700 flex flex-col">
+      <div class="p-4 border-b border-slate-700 flex justify-between items-center">
+        <span id="currentUsername" class="font-bold text-indigo-400">Profil</span>
+        <button onclick="logout()" class="text-xs text-red-400 hover:underline">Chiqish</button>
+      </div>
+      <div class="p-3 border-b border-slate-700">
+        <input type="text" placeholder="Qidirish..." class="w-full bg-slate-900 px-3 py-2 rounded-lg text-sm border border-slate-700 focus:outline-none">
+      </div>
+      <div id="chatList" class="flex-1 overflow-y-auto divide-y divide-slate-700/50">
+        <!-- Umumiy Guruh -->
+        <div onclick="selectChat('general', 'Umumiy O\'quv Guruhi')" class="p-4 hover:bg-slate-700/50 cursor-pointer transition flex items-center space-x-3 bg-slate-700/30" id="chat-general">
+          <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold">G</div>
+          <div>
+            <h4 class="font-semibold text-sm">Umumiy O'quv Guruhi</h4>
+            <p class="text-xs text-slate-400">Barcha o'quvchilar uchun</p>
+          </div>
+        </div>
+        <!-- Shaxsiy chatlar bu yerga dinamik qo'shiladi -->
+      </div>
+    </div>
+
+    <!-- O'ng Panel: Faol Chat Oynasi -->
+    <div class="w-3/4 flex flex-col bg-slate-900">
+      <!-- Chat Sarlavhasi -->
+      <div id="chatHeader" class="p-4 bg-slate-800 border-b border-slate-700 font-bold text-lg">Umumiy O'quv Guruhi</div>
+      
+      <!-- Xabarlar tarixi -->
+      <div id="messageContainer" class="flex-1 p-6 overflow-y-auto space-y-4 flex flex-col">
+        <!-- Xabarlar shu yerga chiqadi -->
+      </div>
+
+      <!-- Xabar Yozish Maydoni -->
+      <div class="p-4 bg-slate-800 border-t border-slate-700 flex items-center space-x-3">
+        <label class="cursor-input cursor-pointer bg-slate-700 hover:bg-slate-600 p-3 rounded-xl transition">
+          📎
+          <input type="file" id="fileInput" class="hidden" onchange="sendFile(this)">
+        </label>
+        <input type="text" id="messageInput" placeholder="Xabar yozing..." class="flex-1 bg-slate-900 border border-slate-700 px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500" onkeypress="if(event.key === 'Enter') sendMessage()">
+        <button onclick="sendMessage()" class="bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-xl font-bold transition">Yuborish</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+    let currentRoom = 'general';
+    let currentUser = localStorage.getItem('username');
+    let isRegisterMode = false;
+
+    if (!currentUser) {
+      document.getElementById('authModal').classList.remove('hidden');
+    } else {
+      document.getElementById('authModal').classList.add('hidden');
+      document.getElementById('currentUsername').innerText = `@${currentUser}`;
+      loadMessages('general');
+      loadUsers();
+      socket.emit('join_room', 'general');
+    }
+
+    function toggleAuthMode() {
+      isRegisterMode = !isRegisterMode;
+      document.getElementById('authTitle').innerText = isRegisterMode ? "Ro'yxatdan o'tish" : "Tizimga Kirish";
+      document.getElementById('authBtn').innerText = isRegisterMode ? "Ro'yxatdan o'tish" : "Kirish";
+    }
+
+    async function handleAuth() {
+      const username = document.getElementById('usernameInput').value;
+      const password = document.getElementById('passwordInput').value;
+      const endpoint = isRegisterMode ? '/api/register' : '/api/login';
+
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        if (isRegisterMode) {
+          alert("Muvaffaqiyatli ro'yxatdan o'tdingiz, endi kiring!");
+          toggleAuthMode();
+        } else {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('username', data.username);
+          location.reload();
+        }
+      } catch (err) {
+        const errDiv = document.getElementById('authError');
+        errDiv.innerText = err.message;
+        errDiv.classList.remove('hidden');
+      }
+    }
+
+    function logout() {
+      localStorage.clear();
+      location.reload();
+    }
+
+    async function loadUsers() {
+      const res = await fetch('/api/users');
+      const users = await res.json();
+      const list = document.getElementById('chatList');
+      
+      users.forEach(user => {
+        if (user.username !== currentUser) {
+          list.innerHTML += `
+            <div onclick="selectChat('${user.username}', '${user.username}')" class="p-4 hover:bg-slate-700/50 cursor-pointer transition flex items-center space-x-3" id="chat-${user.username}">
+              <div class="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center font-bold">${user.username[0].toUpperCase()}</div>
+              <div>
+                <h4 class="font-semibold text-sm">${user.username}</h4>
+                <p class="text-xs text-slate-400">${user.role === 'admin' ? 'Ustoz / Admin' : 'O\'quvchi'}</p>
+              </div>
+            </div>
+          `;
+        }
+      });
+    }
+
+    function selectChat(room, title) {
+      currentRoom = room;
+      document.getElementById('chatHeader').innerText = title;
+      loadMessages(room);
+      socket.emit('join_room', room);
+    }
+
+    async function loadMessages(room) {
+      const res = await fetch(`/api/messages/${room}?user=${currentUser}`);
+      const messages = await res.json();
+      const container = document.getElementById('messageContainer');
+      container.innerHTML = '';
+      messages.forEach(msg => appendMessage(msg));
+    }
+
+    function sendMessage() {
+      const text = document.getElementById('messageInput').value;
+      if (!text.trim()) return;
+
+      const msgData = { sender: currentUser, recipient: currentRoom, text, fileUrl: null };
+      socket.emit('send_message', msgData);
+      document.getElementById('messageInput').value = '';
+    }
+
+    async function fileSend(input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+
+      const msgData = { sender: currentUser, recipient: currentRoom, text: `[Fayl: ${file.name}]`, fileUrl: data.fileUrl };
+      socket.emit('send_message', msgData);
+    }
+
+    socket.on('receive_message', (msg) => {
+      if (msg.recipient === currentRoom || msg.sender === currentRoom || (currentRoom === 'general' && msg.recipient === 'general')) {
+        appendMessage(msg);
+      }
+    });
+
+    function appendMessage(msg) {
+      const container = document.getElementById('messageContainer');
+      const isMe = msg.sender === currentUser;
+      
+      let fileHtml = '';
+      if (msg.fileUrl) {
+        fileHtml = `<a href="${msg.fileUrl}" target="_blank" class="text-indigo-300 underline block mt-1">📎 Yuklab olish / Ko'rish</a>`;
+      }
+
+      container.innerHTML += `
+        <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+          <div class="max-w-md px-4 py-2 rounded-2xl ${isMe ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none'}">
+            <span class="text-xs opacity-70 block font-bold mb-1">${msg.sender}</span>
+            <p>${msg.text}</p>
+            ${fileHtml}
+          </div>
+        </div>
+      `;
+      container.scrollTop = container.scrollHeight;
+    }
+  </script>
+</body>
+</html>
